@@ -21,6 +21,7 @@ jobs:
         curl -L https://github.com/docker/machine/releases/download/v0.16.0/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine &&\
         sudo install /tmp/docker-machine /usr/local/bin/docker-machine &&\
         echo "${DOCKER_HUB_PASSWORD}" | docker login -u "${DOCKER_HUB_USER}" --password-stdin &&\
+        curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh &&\
         dep ensure &&\
         go build -o tests/docker-machine-driver-kamatera &&\
         chmod +x tests/docker-machine-driver-kamatera &&\
