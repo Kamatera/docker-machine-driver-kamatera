@@ -11,15 +11,15 @@ You need to create a Kamatera access token under `API` > `Keys` in the [Kamatera
 Download the latest binary for your platform from [Releases](https://github.com/Kamatera/docker-machine-driver-kamatera/releases)
 
 ```
-wget https://github.com/Kamatera/docker-machine-driver-kamatera/releases/download/v1.0.0-RC1/docker-machine-driver-kamatera_v1.0.0-RC1_linux_amd64.tar.gz
+wget https://github.com/Kamatera/docker-machine-driver-kamatera/releases/download/v1.1.0/docker-machine-driver-kamatera_v1.1.0_linux_amd64.tar.gz
 ```
 
 Extract and install
 
 ```
-tar -xvf docker-machine-driver-kamatera_v1.0.0-RC1_linux_amd64.tar.gz
+tar -xvf docker-machine-driver-kamatera_v1.1.0_linux_amd64.tar.gz
 chmod +x docker-machine-driver-kamatera
-mv docker-machine-driver-kamatera /usr/local/bin/
+sudo mv docker-machine-driver-kamatera /usr/local/bin/
 ```
 
 * The `docker-machine-driver-kamatera` binary should be in your PATH
@@ -85,6 +85,9 @@ Following are additional configuration for creating the Kamatera server:
 - `--kamatera-image` / `KAMATERA_IMAGE` - default: `ubuntu_server_18.04_64-bit`
 - `--kamatera-private-network-name` / `KAMATERA_PRIVATE_NETWORK_NAME` - default: `` - if not provided, will not attach to a private network
 - `--kamatera-private-network-ip` / `KAMATERA_PRIVATE_NETWORK_IP` - default: `` - if not provided, first ip will be used from available private ips
-- `--kamatera-script-file` / `KAMATERA_SCRIPT_FILE` - default: `` - if not empty, loads a startup script from given file path
+- `--kamatera-script-file` / `KAMATERA_SCRIPT_FILE` - default: `` - path to a startup script
+- `--kamatera-tag` - Server tags, can be provided multiple times (example: --kamatera-tag db --kamatera-tag production)
+- `--kamatera-userdata-file` / `KAMATERA_USER_DATA_FILE` - default: `` - path to user-data
+- `--kamatera-extra-sshkey-file` / `KAMATERA_EXTRA_SSHKEY_FILE` - default: `` - path to SSH public key to add to authorized keys
 
 see [Kamatera server options](https://console.kamatera.com/service/server) for the supported values (must be logged-in to Kamatera console)
