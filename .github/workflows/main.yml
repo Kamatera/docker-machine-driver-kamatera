@@ -61,7 +61,7 @@ jobs:
               -ldflags "-X main.Version=${VERSION}" &&\
           find releases -maxdepth 2 -mindepth 2 -type f -exec bash -c 'tar -cvzf "$(dirname {}).tar.gz" -C "$(dirname {})" $(basename {})' \; &&\
           if [[ $GITHUB_REF == refs/tags/* ]]; then
-            RELEASE_ID="$(curl -sL https://api.github.com/repos/Kamatera/ansible-collection-kamatera/releases/tags/${VERSION} | jq -r .id)" &&\
+            RELEASE_ID="$(curl -sL https://api.github.com/repos/Kamatera/docker-machine-driver-kamatera/releases/tags/${VERSION} | jq -r .id)" &&\
             echo uploading binaries to release RELEASE_ID=$RELEASE_ID &&\
             cd releases &&\
             for FILE in `ls *.tar.gz`; do
