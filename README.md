@@ -1,7 +1,6 @@
 # Kamatera Docker Macine Driver
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://secure.travis-ci.org/OriHoch/docker-machine-driver-kamatera.png)](http://travis-ci.org/OriHoch/docker-machine-driver-kamatera)
 
 > This library adds the support for creating [Docker machines](https://github.com/docker/machine) hosted on the [Kamatera Cloud](https://www.kamatera.com/).
 
@@ -9,10 +8,10 @@ You need to create a Kamatera access token under `API` > `Keys` in the [Kamatera
 
 ## Installation
 
-Download the latest binary for your platform from [Releases](https://github.com/OriHoch/docker-machine-driver-kamatera/releases)
+Download the latest binary for your platform from [Releases](https://github.com/Kamatera/docker-machine-driver-kamatera/releases)
 
 ```
-wget https://github.com/OriHoch/docker-machine-driver-kamatera/releases/download/v1.0.0-RC1/docker-machine-driver-kamatera_v1.0.0-RC1_linux_amd64.tar.gz
+wget https://github.com/Kamatera/docker-machine-driver-kamatera/releases/download/v1.0.0-RC1/docker-machine-driver-kamatera_v1.0.0-RC1_linux_amd64.tar.gz
 ```
 
 Extract and install
@@ -86,5 +85,6 @@ Following are additional configuration for creating the Kamatera server:
 - `--kamatera-image` / `KAMATERA_IMAGE` - default: `ubuntu_server_18.04_64-bit`
 - `--kamatera-private-network-name` / `KAMATERA_PRIVATE_NETWORK_NAME` - default: `` - if not provided, will not attach to a private network
 - `--kamatera-private-network-ip` / `KAMATERA_PRIVATE_NETWORK_IP` - default: `` - if not provided, first ip will be used from available private ips
+- `--kamatera-script-file` / `KAMATERA_SCRIPT_FILE` - default: `` - if not empty, loads a startup script from given file path
 
 see [Kamatera server options](https://console.kamatera.com/service/server) for the supported values (must be logged-in to Kamatera console)

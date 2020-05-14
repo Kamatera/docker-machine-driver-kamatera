@@ -10,7 +10,7 @@ Use an up-to-date version of [Go](https://golang.org/dl) and [dep](https://githu
 Download the sources
 
 ```
-go get github.com/OriHoch/docker-machine-driver-kamatera
+go get github.com/Kamatera/docker-machine-driver-kamatera
 ```
 
 Set some go environment variables
@@ -24,7 +24,13 @@ export PATH="$PATH:$GOBIN"
 Change to the project directory
 
 ```
-cd $GOPATH/src/github.com/OriHoch/docker-machine-driver-kamatera/
+cd $GOPATH/src/github.com/Kamatera/docker-machine-driver-kamatera/
+```
+
+Install dependencies
+
+```
+dep ensure
 ```
 
 Build
