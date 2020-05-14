@@ -17,7 +17,7 @@ import (
 	"github.com/docker/machine/libmachine/mcnflag"
 	mcnssh "github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
-	"github.com/go-resty/resty"
+	"gopkg.in/resty.v1"
 	"github.com/pkg/errors"
 	"github.com/sethvargo/go-password/password"
 	"golang.org/x/crypto/ssh"

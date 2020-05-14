@@ -5,35 +5,7 @@
 
 ## Building from source
 
-Use an up-to-date version of [Go](https://golang.org/dl) and [dep](https://github.com/golang/dep)
-
-Download the sources
-
-```
-go get github.com/Kamatera/docker-machine-driver-kamatera
-```
-
-Set some go environment variables
-
-```
-export GOPATH=$(go env GOPATH)
-export GOBIN=$GOPATH/bin
-export PATH="$PATH:$GOBIN"
-```
-
-Change to the project directory
-
-```
-cd $GOPATH/src/github.com/Kamatera/docker-machine-driver-kamatera/
-```
-
-Install dependencies
-
-```
-dep ensure
-```
-
-Build
+Use an up-to-date version of [Go](https://golang.org/dl)
 
 ```
 go build -o docker-machine-driver-kamatera
