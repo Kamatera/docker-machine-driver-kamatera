@@ -17,8 +17,10 @@ jobs:
 #        echo "${DOCKER_HUB_PASSWORD}" | docker login -u "${DOCKER_HUB_USER}" --password-stdin &&\
 #        go build -o tests/docker-machine-driver-kamatera &&\
 #        chmod +x tests/docker-machine-driver-kamatera &&\
-#        ( docker pull kamatera/kamatera-docker-machine-driver-tests || true ) &&\
+#        docker pull kamatera/kamatera-docker-machine-driver-tests &&\
 #        docker build --cache-from kamatera/kamatera-docker-machine-driver-tests -t tests tests/ &&\
+#        docker tag tests kamatera/kamatera-docker-machine-driver-tests &&\
+#        docker push kamatera/kamatera-docker-machine-driver-tests &&\
 #        docker run -t \
 #                   -v /var/run/docker.sock:/var/run/docker.sock \
 #                   -v "`pwd`/test_results/kamatera-suite-1/:/test_results/" \
@@ -28,9 +30,6 @@ jobs:
 #                   -e NUM_SINGLE_MACHINE_TESTS_TO_RUN=5 \
 #                   -e TEST_ACCOUNT=NOLIMIT \
 #                   tests tests_suite.py &&\
-#        chown -R $USER test_results/ tests/ &&\
-#        docker tag tests kamatera/kamatera-docker-machine-driver-tests &&\
-#        docker push kamatera/kamatera-docker-machine-driver-tests &&\
 #        docker run -t -e KAMATERA_API_CLIENT_ID -e KAMATERA_API_SECRET tests cleanup.py "ktm-"
 #    - uses: actions/upload-artifact@v1
 #      if: always()
@@ -55,6 +54,7 @@ jobs:
           echo VERSION=$VERSION &&\
           go get github.com/mitchellh/gox &&\
           mkdir releases &&\
+
           $HOME/go/bin/gox -osarch='!netbsd/arm !openbsd/386 !openbsd/amd64 !netbsd/386 !netbsd/amd64' \
               -output="releases/{{.Dir}}_${VERSION}_{{.OS}}_{{.Arch}}/{{.Dir}}" \
               -ldflags "-X main.Version=${VERSION}" &&\
