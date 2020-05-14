@@ -12,6 +12,7 @@ jobs:
         KAMATERA_API_CLIENT_ID: ${{ secrets.KAMATERA_API_CLIENT_ID }}
         KAMATERA_API_SECRET: ${{ secrets.KAMATERA_API_SECRET }}
       run: |
+        echo $GOROOT &&\
         if [[ $GITHUB_REF == refs/tags/* ]]; then
           VERSION="$(echo $GITHUB_REF | sed -e 's:refs/tags/::')"
         else
@@ -20,6 +21,7 @@ jobs:
         echo VERSION=$VERSION &&\
         curl -L https://github.com/docker/machine/releases/download/v0.16.0/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine &&\
         sudo install /tmp/docker-machine /usr/local/bin/docker-machine &&\
+        export GOBIN=$GOROOT/bin &&\
         echo "${DOCKER_HUB_PASSWORD}" | docker login -u "${DOCKER_HUB_USER}" --password-stdin &&\
         curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh &&\
         dep ensure &&\
