@@ -38,3 +38,13 @@ jobs:
         docker tag tests kamatera/kamatera-docker-machine-driver-tests &&\
         docker push kamatera/kamatera-docker-machine-driver-tests &&\
         docker run -t -e KAMATERA_API_CLIENT_ID -e KAMATERA_API_SECRET tests cleanup.py "ktm-"
+    - uses: actions/upload-artifact@v1
+      if: always()
+      with:
+        name: tests
+        path: tests
+    - uses: actions/upload-artifact@v1
+      if: always()
+      with:
+        name: test_results
+        path: test_results
