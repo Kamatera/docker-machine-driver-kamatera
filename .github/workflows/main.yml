@@ -68,7 +68,7 @@ jobs:
               if [ "$(curl -H "Authorization: token $KAMATERA_MACHINE_USER_TOKEN" \
                            -H "Content-Type: $(file -b --mime-type $FILE)" \
                            --data-binary @$FILE \
-                           "https://uploads.github.com/repos/Kamatera/ansible-collection-kamatera/releases/${RELEASE_ID}/assets?name=$(basename $FILE)" | tee /dev/stderr | jq -r .state)" == "uploaded" ]; then
+                           "https://uploads.github.com/repos/Kamatera/docker-machine-driver-kamatera/releases/${RELEASE_ID}/assets?name=$(basename $FILE)" | tee /dev/stderr | jq -r .state)" == "uploaded" ]; then
                 echo Release asset $FILE uploaded successfuly
               else
                 echo Failed to upload release asset $FILE
