@@ -1,27 +1,26 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
-	"time"
 	"net/http"
-    "encoding/json"
-    "strings"
-    "regexp"
-    "bytes"
-    "net/url"
-	"math/rand"
+	"os"
+	"regexp"
+	"strings"
+	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
 	mcnssh "github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
-	"github.com/pkg/errors"
-	"golang.org/x/crypto/ssh"
 	"github.com/go-resty/resty"
+	"github.com/pkg/errors"
 	"github.com/sethvargo/go-password/password"
+	"golang.org/x/crypto/ssh"
 )
 
 type Driver struct {
@@ -40,6 +39,13 @@ type Driver struct {
 	PrivateNetworkName string
 	PrivateNetworkIp string
 	PrivateNetworkIps []string
+	StartupScriptFile string
+	ExtraSshKeyFile string
+	UserDataFile string
+	StartupScript string
+	ExtraSshKey string
+	UserData string
+	tags []string
 
 	ServerOptions map[string]interface{}
 	ImageID string
@@ -71,6 +77,10 @@ const (
 	flagCreateServerCommandId = "kamatera-create-server-command-id"
 	flagPrivateNetworkName = "kamatera-private-network-name"
 	flagPrivateNetworkIp = "kamatera-private-network-ip"
+	flagScriptFile = "kamatera-script-file"
+	flagExtraSshKeyFile = "kamatera-extra-sshkey-file"
+	flagUserDataFile = "kamatera-userdata-file"
+	flagTag = "kamatera-tag"
 )
 
 func NewDriver() *Driver {
@@ -181,6 +191,29 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Kamatera private network ip (optional)",
 			Value:  "",
 		},
+		mcnflag.StringFlag{
+			EnvVar: "KAMATERA_SCRIPT_FILE",
+			Name:   flagScriptFile,
+			Usage:  "path to startup script (optional)",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "KAMATERA_EXTRA_SSHKEY_FILE",
+			Name:   flagExtraSshKeyFile,
+			Usage:  "path to public SSH key to add to authorized keys (optional)",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "KAMATERA_USER_DATA_FILE",
+			Name:   flagUserDataFile,
+			Usage:  "path to user-data (optional)",
+			Value:  "",
+		},
+		mcnflag.StringSliceFlag{
+			Name: flagTag,
+			Usage: "Server tags (example: --kamatera-tag db --kamatera-tag production)",
+			Value: []string{},
+		},
 	}
 }
 
@@ -197,6 +230,10 @@ func (d *Driver) SetConfigFromFlags(opts drivers.DriverOptions) error {
 	d.CreateServerCommandId = opts.Int(flagCreateServerCommandId)
 	d.PrivateNetworkName = opts.String(flagPrivateNetworkName)
 	d.PrivateNetworkIp = opts.String(flagPrivateNetworkIp)
+	d.StartupScriptFile = opts.String(flagScriptFile)
+	d.ExtraSshKeyFile = opts.String(flagExtraSshKeyFile)
+	d.UserDataFile = opts.String(flagUserDataFile)
+	d.tags = opts.StringSlice(flagTag)
 
 	d.SetSwarmConfigFromFlags(opts)
 
@@ -271,6 +308,48 @@ func (d *Driver) PreCreateCheck() error {
         log.Debugf("Skipping pre-create checks, continuing from existing command id = %d", d.CreateServerCommandId)
         return nil
     }
+	if d.StartupScriptFile != "" {
+		file, e := os.Open(d.StartupScriptFile)
+		if e != nil {
+			return e
+		}
+		defer file.Close()
+		scriptBytes, e := ioutil.ReadAll(file)
+		if e != nil {
+			return e
+		}
+		d.StartupScript = string(scriptBytes)
+	} else {
+		d.StartupScript = ""
+	}
+	if d.ExtraSshKeyFile != "" {
+		file, e := os.Open(d.ExtraSshKeyFile)
+		if e != nil {
+			return e
+		}
+		defer file.Close()
+		extraSshKeyBytes, e := ioutil.ReadAll(file)
+		if e != nil {
+			return e
+		}
+		d.ExtraSshKey = string(extraSshKeyBytes)
+	} else {
+		d.ExtraSshKey = ""
+	}
+	if d.UserDataFile != "" {
+		file, e := os.Open(d.UserDataFile)
+		if e != nil {
+			return e
+		}
+		defer file.Close()
+		userDataBytes, e := ioutil.ReadAll(file)
+		if e != nil {
+			return e
+		}
+		d.UserData = string(userDataBytes)
+	} else {
+		d.UserData = ""
+	}
     i := 0
     for {
         log.Debugf("PreCreateCheck (%d): %s", i, time.Now())
@@ -318,21 +397,21 @@ func (d *Driver) PreCreateCheck() error {
                 d.PrivateNetworkIp = "auto"
             }
         }
+		traffic_infos := "Available traffic options for monthly package:\n Traffic | Description\n"
+		first_traffic_id := ""
+		first_traffic_description := ""
+		for _, traffic := range res.Traffic[d.Datacenter] {
+			traffic_id := fmt.Sprintf("%v", traffic.Id)
+			if first_traffic_id == "" {
+				first_traffic_id = traffic_id
+				first_traffic_description = traffic.Info
+			}
+			traffic_infos += fmt.Sprintf("%8s | %s\n", traffic_id, traffic.Info)
+			if traffic_id == d.Traffic {
+				d.TrafficDescription = traffic.Info
+			}
+		}
         if d.Billing == "monthly" {
-            traffic_infos := "Available traffic options for monthly package:\n Traffic | Description\n"
-            first_traffic_id := ""
-            first_traffic_description := ""
-            for _, traffic := range res.Traffic[d.Datacenter] {
-                traffic_id := fmt.Sprintf("%v", traffic.Id)
-                if first_traffic_id == "" {
-                	first_traffic_id = traffic_id
-                	first_traffic_description = traffic.Info
-				}
-		        traffic_infos += fmt.Sprintf("%8s | %s\n", traffic_id, traffic.Info)
-		        if traffic_id == d.Traffic {
-		            d.TrafficDescription = traffic.Info
-		        }
-		    }
             if d.TrafficDescription == "" {
             	if d.Traffic == "" && first_traffic_id != "" {
             		d.Traffic = first_traffic_id
@@ -342,6 +421,8 @@ func (d *Driver) PreCreateCheck() error {
 					return errors.New(fmt.Sprintf("traffic flag is required when using monthly billing, please choose from the available traffic options"))
 				}
 		    }
+		} else {
+			d.Traffic = "t5000"
 		}
         return nil
     }
@@ -349,23 +430,50 @@ func (d *Driver) PreCreateCheck() error {
 
 func (d *Driver) GetPrivateNetworkIp() string {
 	if d.PrivateNetworkIp == "" {
-		rand.Seed(time.Now().Unix())
-		var newPrivateNetworkIps []string;
-		targetI := rand.Intn(len(d.PrivateNetworkIps))
-		targetIP := ""
-		for i, ip := range d.PrivateNetworkIps {
-			if i == targetI {
-				targetIP = ip
-			} else {
-				newPrivateNetworkIps = append(newPrivateNetworkIps, ip)
-			}
-		}
-		d.PrivateNetworkIps = newPrivateNetworkIps
-		log.Info("Using private network IP: ", targetIP)
-		return targetIP
+		return "auto"
 	} else {
-		return d.PrivateNetworkIp;
+		return d.PrivateNetworkIp
 	}
+}
+
+type CreateServerPostTag struct {
+	Value string `json:"value"`
+	Label string `json:"label"`
+}
+
+type CreateServerPostValues struct {
+	Datacenter string `json:"datacenter"`
+	NServers int64 `json:"nServers"`
+	Names []string `json:"names"`
+	CpuStr string `json:"cpuStr"`
+	CpuType string `json:"cpuType"`
+	RamMB int `json:"ramMB"`
+	DiskSizesGB []int `json:"diskSizesGB"`
+	Password string `json:"password"`
+	PasswordValidate string `json:"passwordValidate"`
+	Managed bool `json:"managed"`
+	Backup bool `json:"backup"`
+	BillingMode int `json:"billingMode"`
+	TrafficPackage string `json:"trafficPackage"`
+	UseSimpleNetworking bool `json:"useSimpleNetworking"`
+	PowerOnCompletion bool `json:"powerOnCompletion"`
+	UseSimpleWan bool `json:"useSimpleWan"`
+	UseSimpleLan bool `json:"useSimpleLan"`
+	NetModes []string `json:"netModes"`
+	NetNames []string `json:"netNames"`
+	NetSubnets []string `json:"netSubnets"`
+	NetPrefixes []int `json:"netPrefixes"`
+	NetIps []string `json:"netIps"`
+	DiskImageId string `json:"diskImageId"`
+	SourceServerId string `json:"sourceServerId"`
+	UserId int `json:"userId"`
+	OwnerId int `json:"ownerId"`
+	SrcUI bool `json:"srcUI"`
+	SelectedKey string `json:"selectedKey"`
+	Script string `json:"script"`
+	SelectedSSHKeyValue string `json:"selectedSSHKeyValue"`
+	SelectedTags []CreateServerPostTag `json:"selectedTags"`
+	UserData string `json:"userData"`
 }
 
 func (d *Driver) Create() error {
@@ -378,8 +486,12 @@ func (d *Driver) Create() error {
         log.Infof("Disk Size (GB): %d", d.DiskSize)
         log.Infof("Disk Image: %s %s", d.Image, d.DiskImageId)
         log.Infof("Billing: %s", d.Billing)
+        var billingMode int
         if d.Billing == "monthly" {
         	log.Infof("Traffic package: %s", d.TrafficDescription)
+        	billingMode = 0
+		} else {
+			billingMode = 1
 		}
         if d.PrivateNetworkName != "" {
             log.Infof("Private network name: %s", d.PrivateNetworkName)
@@ -391,36 +503,102 @@ func (d *Driver) Create() error {
             	return errors.New("Invalid private network name or no available IPs")
             }
         }
+        if d.StartupScript != "" {
+        	log.Info("With startup script")
+		}
+		if d.UserData != "" {
+			log.Info("With user data")
+		}
+		if d.ExtraSshKey != "" {
+			log.Info("With extra SSH key")
+		}
+		var tags []CreateServerPostTag
+        for _, tag := range d.tags {
+        	tags = append(tags, CreateServerPostTag{
+				Value: tag,
+				Label: tag,
+			})
+		}
+		if len(tags) > 0 {
+			log.Info("With tags")
+		}
         password_, err := password.Generate(12, 3, 0, false, false)
         if err != nil {return err}
         d.Password = password_
         i := 0
         for {
-			private_network_args := ""
-        	if d.PrivateNetworkName != "" {
-        		private_network_ip := d.GetPrivateNetworkIp()
-        		if private_network_ip == "" {
-        			return errors.New("Failed to get a private network IP")
+			netModes := []string{"wan"}
+			netNames := []string{"auto"}
+			netSubnets := []string{""}
+			netPrefixes := []int{0}
+			netIps := []string{"auto"}
+			if d.PrivateNetworkName != "" {
+				privateNetworkIp := d.PrivateNetworkIp
+				if d.PrivateNetworkIp == "" {
+					privateNetworkIp = "auto"
 				}
-				private_network_args = fmt.Sprintf("&network_name_1=%s&network_ip_1=%s", d.PrivateNetworkName, private_network_ip)
+        		netModes = append(netModes, "lan")
+				netNames = append(netNames, d.PrivateNetworkName)
+				netSubnets = append(netSubnets, "")
+				netPrefixes = append(netPrefixes, 0)
+				netIps = append(netIps, privateNetworkIp)
 			}
 			serverNameSuffix, err := password.Generate(6, 0, 0, false, false)
 			if err != nil {return err}
 			d.ServerName = fmt.Sprintf("%s-%s", d.MachineName, serverNameSuffix)
-			qs := fmt.Sprintf("datacenter=%s&name=%s&password=%s&cpu=%s&ram=%d&billing=%s&traffic=%s&disk_size_0=%d&disk_src_0=%s&network_name_0=%s&power=1&managed=0&backup=0%s", url.PathEscape(d.Datacenter), url.PathEscape(d.ServerName), url.PathEscape(d.Password), url.PathEscape(d.Cpu), d.Ram, url.PathEscape(d.Billing), url.PathEscape(d.Traffic), d.DiskSize, strings.Replace(url.PathEscape(d.DiskImageId), ":", "%3A", -1), "wan", private_network_args)
-			log.Debugf("https://console.kamatera.com/service/server?%s", qs)
-			payload := strings.NewReader(qs)
+			postValues := CreateServerPostValues{
+				Datacenter:          d.Datacenter,
+				NServers:            1,
+				Names:               []string{d.ServerName},
+				CpuStr:              d.Cpu,
+				CpuType:             d.Cpu[len(d.Cpu)-1:],
+				RamMB:               d.Ram,
+				DiskSizesGB:         []int{d.DiskSize},
+				Password:            d.Password,
+				PasswordValidate:    d.Password,
+				Managed:             false,
+				Backup:              false,
+				BillingMode:         billingMode,
+				TrafficPackage:      d.Traffic,
+				UseSimpleNetworking: false,
+				PowerOnCompletion:   true,
+				UseSimpleWan:        false,
+				UseSimpleLan:        false,
+				NetModes:            netModes,
+				NetNames:            netNames,
+				NetSubnets:          netSubnets,
+				NetPrefixes:         netPrefixes,
+				NetIps:              netIps,
+				DiskImageId:         d.DiskImageId,
+				SourceServerId:      "",
+				UserId:              0,
+				OwnerId:             0,
+				SrcUI:               false,
+				SelectedKey:         "",
+				Script:              d.StartupScript,
+				SelectedSSHKeyValue: d.ExtraSshKey,
+				SelectedTags:        tags,
+				UserData:            d.UserData,
+			}
+			log.Debugf("POST https://console.kamatera.com/svc/serverCreate %v", postValues)
 			log.Debugf("Create (%d): %s", i, time.Now())
             if i > 0 {
                 log.Debugf("Retry %d / 10", i)
                 time.Sleep(time.Duration(i * 6000) * time.Millisecond)
             }
             i += 1
-            req, err := http.NewRequest("POST", "https://console.kamatera.com/service/server", payload)
+			buf := new(bytes.Buffer)
+			if e := json.NewEncoder(buf).Encode(postValues); e != nil {
+				return e
+			}
+			req, e := http.NewRequest("POST", "https://console.kamatera.com/svc/serverCreate", buf)
+			if e != nil {
+				return e
+			}
             req.Header.Add("User-Agent", "docker-machine-driver-kamatera/v0.0.0")
             req.Header.Add("Host", "console.kamatera.com")
-            req.Header.Add("Accept", "*/*")
-            req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+            req.Header.Add("Accept", "application/json")
+			req.Header.Add("Content-Type", "application/json")
             req.Header.Add("AuthClientId", d.APIClientID)
             req.Header.Add("AuthSecret", d.APISecret)
             r, err := http.DefaultClient.Do(req)
@@ -443,12 +621,7 @@ func (d *Driver) Create() error {
             }
             if r.StatusCode != 200 {
                 if r.StatusCode == 500 {
-                	if d.PrivateNetworkName == "" || d.PrivateNetworkIp != "" || i >= 10 {
-						return errors.New(fmt.Sprintf("Kamatera API responded with the following error: %s", string(body)))
-					} else {
-						log.Debugf(fmt.Sprintf("Kamatera API responded with an error, retrying: %s", string(body)))
-						continue
-					}
+					return errors.New(fmt.Sprintf("Kamatera API responded with the following error: %s", string(body)))
                 }
                 log.Info(string(body))
                 if i >= 10 {
