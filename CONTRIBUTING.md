@@ -8,7 +8,7 @@
 Use an up-to-date version of [Go](https://golang.org/dl)
 
 ```
-go build -o docker-machine-driver-kamatera
+go build
 ```
 
 Set your Kamatera api keys in environment variables

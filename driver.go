@@ -40,8 +40,11 @@ type Driver struct {
 	PrivateNetworkIp string
 	PrivateNetworkIps []string
 	StartupScriptFile string
+	StartupScriptString string
 	ExtraSshKeyFile string
+	ExtraSshKeyString string
 	UserDataFile string
+	UserDataString string
 	StartupScript string
 	ExtraSshKey string
 	UserData string
@@ -78,8 +81,11 @@ const (
 	flagPrivateNetworkName = "kamatera-private-network-name"
 	flagPrivateNetworkIp = "kamatera-private-network-ip"
 	flagScriptFile = "kamatera-script-file"
+	flagScriptString = "kamatera-script"
 	flagExtraSshKeyFile = "kamatera-extra-sshkey-file"
+	flagExtraSshKeyString = "kamatera-extra-sshkey"
 	flagUserDataFile = "kamatera-userdata-file"
+	flagUserDataString = "kamatera-userdata"
 	flagTag = "kamatera-tag"
 )
 
@@ -194,19 +200,37 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			EnvVar: "KAMATERA_SCRIPT_FILE",
 			Name:   flagScriptFile,
-			Usage:  "path to startup script (optional)",
+			Usage:  "path to startup script file (optional)",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "KAMATERA_SCRIPT",
+			Name:   flagScriptString,
+			Usage:  "startup script (optional)",
 			Value:  "",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "KAMATERA_EXTRA_SSHKEY_FILE",
 			Name:   flagExtraSshKeyFile,
-			Usage:  "path to public SSH key to add to authorized keys (optional)",
+			Usage:  "path to public SSH key file to add to authorized keys (optional)",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "KAMATERA_EXTRA_SSHKEY",
+			Name:   flagExtraSshKeyString,
+			Usage:  "public SSH key to add to authorized keys (optional)",
 			Value:  "",
 		},
 		mcnflag.StringFlag{
 			EnvVar: "KAMATERA_USER_DATA_FILE",
 			Name:   flagUserDataFile,
-			Usage:  "path to user-data (optional)",
+			Usage:  "path to user-data file (optional)",
+			Value:  "",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "KAMATERA_USER_DATA",
+			Name:   flagUserDataString,
+			Usage:  "user-data (optional)",
 			Value:  "",
 		},
 		mcnflag.StringSliceFlag{
@@ -231,8 +255,11 @@ func (d *Driver) SetConfigFromFlags(opts drivers.DriverOptions) error {
 	d.PrivateNetworkName = opts.String(flagPrivateNetworkName)
 	d.PrivateNetworkIp = opts.String(flagPrivateNetworkIp)
 	d.StartupScriptFile = opts.String(flagScriptFile)
+	d.StartupScriptString = opts.String(flagScriptString)
 	d.ExtraSshKeyFile = opts.String(flagExtraSshKeyFile)
+	d.ExtraSshKeyString = opts.String(flagExtraSshKeyString)
 	d.UserDataFile = opts.String(flagUserDataFile)
+	d.UserDataString = opts.String(flagUserDataString)
 	d.tags = opts.StringSlice(flagTag)
 
 	d.SetSwarmConfigFromFlags(opts)
@@ -302,53 +329,41 @@ func IsIntInArray(i int, arr []int) bool {
     for _, n := range arr {if i == n {return true}}; return false
 }
 
+func GetFileArgString(flagName string, fileArgValue string, stringArgValue string) (error, string) {
+	if fileArgValue != "" {
+		if stringArgValue != "" {
+			return errors.New(fmt.Sprintf("Can't use both file and string arguments for '%s'", flagName)), ""
+		}
+		file, e := os.Open(fileArgValue)
+		if e != nil {
+			return e, ""
+		}
+		defer file.Close()
+		argValueBytes, e := ioutil.ReadAll(file)
+		if e != nil {
+			return e, ""
+		}
+		return nil, string(argValueBytes)
+	} else {
+		return nil, stringArgValue
+	}
+}
+
 func (d *Driver) PreCreateCheck() error {
     log.Debugf("PreCreateCheck: %s", time.Now())
     if d.CreateServerCommandId != 0 {
         log.Debugf("Skipping pre-create checks, continuing from existing command id = %d", d.CreateServerCommandId)
         return nil
     }
-	if d.StartupScriptFile != "" {
-		file, e := os.Open(d.StartupScriptFile)
-		if e != nil {
-			return e
-		}
-		defer file.Close()
-		scriptBytes, e := ioutil.ReadAll(file)
-		if e != nil {
-			return e
-		}
-		d.StartupScript = string(scriptBytes)
-	} else {
-		d.StartupScript = ""
+    var err error
+	if err, d.StartupScript = GetFileArgString("script-file", d.StartupScriptFile, d.StartupScriptString); err != nil {
+		return err
 	}
-	if d.ExtraSshKeyFile != "" {
-		file, e := os.Open(d.ExtraSshKeyFile)
-		if e != nil {
-			return e
-		}
-		defer file.Close()
-		extraSshKeyBytes, e := ioutil.ReadAll(file)
-		if e != nil {
-			return e
-		}
-		d.ExtraSshKey = string(extraSshKeyBytes)
-	} else {
-		d.ExtraSshKey = ""
+	if err, d.ExtraSshKey = GetFileArgString("extra-sshkey", d.ExtraSshKeyFile, d.ExtraSshKeyString); err != nil {
+		return err
 	}
-	if d.UserDataFile != "" {
-		file, e := os.Open(d.UserDataFile)
-		if e != nil {
-			return e
-		}
-		defer file.Close()
-		userDataBytes, e := ioutil.ReadAll(file)
-		if e != nil {
-			return e
-		}
-		d.UserData = string(userDataBytes)
-	} else {
-		d.UserData = ""
+	if err, d.UserData = GetFileArgString("userdata", d.UserDataFile, d.UserDataString); err != nil {
+		return err
 	}
     i := 0
     for {
