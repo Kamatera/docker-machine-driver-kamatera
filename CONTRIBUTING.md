@@ -104,3 +104,38 @@ Cleanup all the test servers in the Kamatera account
 ```
 python3.6 tests/cleanup.py "ktm-"
 ```
+
+## Rancher tests
+
+Start the management machine
+
+```
+docker-machine create -d kamatera --kamatera-cpu 2B --kamatera-disk-size 30 --kamatera-ram 2048 --kamatera-datacenter IL ktm-rancher-management
+```
+
+SSH to the management machine
+
+```
+docker-machine ssh ktm-rancher-management
+```
+
+Start a Rancher instance
+
+```
+RANCHER_IMAGE="rancher/rancher:stable"
+docker run -d --name rancher --restart no -p 80:80 -p 443:443 \
+           -v /var/lib/rancher:/var/lib/rancher "${RANCHER_IMAGE}"
+```
+
+Login at https://SERVER_IP
+
+Add the driver, create a cluster using it
+
+When done testing, delete the created machines
+
+Remove the container and volume
+
+```
+docker rm -f ktm-test-rancher
+sudo rm -rf .test-rancher
+```

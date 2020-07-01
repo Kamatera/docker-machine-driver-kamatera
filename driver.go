@@ -350,6 +350,7 @@ func GetFileArgString(flagName string, fileArgValue string, stringArgValue strin
 }
 
 func (d *Driver) PreCreateCheck() error {
+    log.Info("docker-machine-driver-kamatera", Version)
     log.Debugf("PreCreateCheck: %s", time.Now())
     if d.CreateServerCommandId != 0 {
         log.Debugf("Skipping pre-create checks, continuing from existing command id = %d", d.CreateServerCommandId)
