@@ -82,6 +82,7 @@ Following are additional configuration for creating the Kamatera server:
 - `--kamatera-cpu` / `KAMATERA_CPU` - default: `1B`
 - `--kamatera-ram` / `KAMATERA_RAM` - default: `1024`
 - `--kamatera-disk-size` / `KAMATERA_DISK_SIZE` - default: `10`
+- `--kamatera-extra-disk-sizes` / `KAMATERA_EXTRA_DISK_SIZES` - default: `` - comma-separated additional disks to create
 - `--kamatera-image` / `KAMATERA_IMAGE` - default: `ubuntu_server_18.04_64-bit`
 - `--kamatera-private-network-name` / `KAMATERA_PRIVATE_NETWORK_NAME` - default: `` - if not provided, will not attach to a private network
 - `--kamatera-private-network-ip` / `KAMATERA_PRIVATE_NETWORK_IP` - default: `` - if not provided, first ip will be used from available private ips
