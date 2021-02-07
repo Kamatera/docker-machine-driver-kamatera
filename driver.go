@@ -412,14 +412,17 @@ func (d *Driver) PreCreateCheck() error {
 		if d.Ram < 999 {return errors.New("Insufficient RAM, Please use at least 1GB of RAM.")}
 		if ! IsIntInArray(d.DiskSize, res.Disk) {return errors.New("Invalid disk size")}
 		for _, extraDiskSize := range strings.Split(d.ExtraDiskSizes, ",") {
-			extraDiskSizeInt, err := strconv.Atoi(strings.TrimSpace(extraDiskSize))
-			if err != nil {
-				return errors.New(fmt.Sprintf("Invalid extra disk size: '%s'", extraDiskSize))
+			extraDiskSize = strings.TrimSpace(extraDiskSize)
+			if len(extraDiskSize) > 0 {
+				extraDiskSizeInt, err := strconv.Atoi(extraDiskSize)
+				if err != nil {
+					return errors.New(fmt.Sprintf("Invalid extra disk size: '%s'", extraDiskSize))
+				}
+				if ! IsIntInArray(extraDiskSizeInt, res.Disk) {
+					return errors.New("Invalid extra disk size: selected size not available in server options")
+				}
+				d.ExtraDiskSizesInt = append(d.ExtraDiskSizesInt, extraDiskSizeInt)
 			}
-			if ! IsIntInArray(extraDiskSizeInt, res.Disk) {
-				return errors.New("Invalid extra disk size: selected size not available in server options")
-			}
-			d.ExtraDiskSizesInt = append(d.ExtraDiskSizesInt, extraDiskSizeInt)
 		}
 		if len(d.ExtraDiskSizesInt) > 3 {
 			return errors.New("Too many extra disk sizes: maximum allowed is 3")
