@@ -2,9 +2,15 @@
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-> This library adds the support for creating [Docker machines](https://github.com/docker/machine) hosted on the [Kamatera Cloud](https://www.kamatera.com/).
+> This library adds the support for creating [Rancher machines](https://github.com/rancher/machine) hosted on the [Kamatera Cloud](https://www.kamatera.com/).
 
 You need to create a Kamatera access token under `API` > `Keys` in the [Kamatera console](https://console.kamatera.com/keys).
+
+## Deprecation of Docker Machine
+
+Original [Docker Machine](https://github.com/docker/machine) is deprecated, but the [Rancher Machine fork](https://github.com/rancher/machine)
+is still maintained. You can download the Rancher machine binary from [Rancher Machine releases](https://github.com/rancher/machine/releases).
+It is fully compatible with Docker Machine and can be used to replace it.
 
 ## Installation
 
@@ -58,19 +64,25 @@ eval $(docker-machine env $MACHINE_NAME)
 docker run hello-world
 ```
 
-Run docker-machine operations
+Run rancher-machine operations
 
 ```
-docker-machine restart $MACHINE_NAME
-docker-machine stop $MACHINE_NAME
-docker-machine start $MACHINE_NAME
-docker-machine status $MACHINE_NAME
-docker-machine rm $MACHINE_NAME
+rancher-machine restart $MACHINE_NAME
+rancher-machine stop $MACHINE_NAME
+rancher-machine start $MACHINE_NAME
+rancher-machine status $MACHINE_NAME
+rancher-machine rm $MACHINE_NAME
+```
+
+You can enable debugging for all commands by adding `--debug` argument:
+
+```
+rancher-machine --debug ARGS...
 ```
 
 ## Create options
 
-The following options / environment variables are available when running docker-machine create:
+The following options / environment variables are available when running rancher-machine create:
 
 - `--kamatera-api-client-id` / `KAMATERA_API_CLIENT_ID`: **required**. Your project-specific access token for the kamatera Cloud API.
 - `--kamatera-api-secret` / `KAMATERA_API_SECRET`: **required**. You Kamatera API secret.
