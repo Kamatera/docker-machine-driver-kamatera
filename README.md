@@ -48,19 +48,19 @@ export MACHINE_NAME=my-machine
 Create the machine
 
 ```
-docker-machine create --driver kamatera $MACHINE_NAME
+rancher-machine create --driver kamatera $MACHINE_NAME
 ```
 
 SSH into the machine
 
 ```
-docker-machine ssh $MACHINE_NAME
+rancher-machine ssh $MACHINE_NAME
 ```
 
 Use Docker
 
 ```
-eval $(docker-machine env $MACHINE_NAME)
+eval $(rancher-machine env $MACHINE_NAME)
 docker run hello-world
 ```
 
