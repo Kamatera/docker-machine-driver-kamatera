@@ -98,9 +98,12 @@ Following are additional configuration for creating the Kamatera server:
 - `--kamatera-image` / `KAMATERA_IMAGE` - default: `ubuntu_server_18.04_64-bit`
 - `--kamatera-private-network-name` / `KAMATERA_PRIVATE_NETWORK_NAME` - default: `` - if not provided, will not attach to a private network
 - `--kamatera-private-network-ip` / `KAMATERA_PRIVATE_NETWORK_IP` - default: `` - if not provided, first ip will be used from available private ips
-- `--kamatera-script-file` / `KAMATERA_SCRIPT_FILE` - default: `` - path to a startup script
+- `--kamatera-script` / `KAMATERA_SCRIPT` - default: `` - startup script
+- `--kamatera-script-file` / `KAMATERA_SCRIPT_FILE` - default: `` - path to a startup script file
 - `--kamatera-tag` - Server tags, can be provided multiple times (example: --kamatera-tag db --kamatera-tag production)
-- `--kamatera-userdata-file` / `KAMATERA_USER_DATA_FILE` - default: `` - path to user-data
-- `--kamatera-extra-sshkey-file` / `KAMATERA_EXTRA_SSHKEY_FILE` - default: `` - path to SSH public key to add to authorized keys
+- `--kamatera-userdata` / `KAMATERA_USER_DATA` - default: `` - user-data contents to add to the machine on creation
+- `--kamatera-userdata-file` / `KAMATERA_USER_DATA_FILE` - default: `` - path to user-data file
+- `--kamatera-extra-sshkey` / `KAMATERA_EXTRA_SSHKEY` - default: `` - contents of SSH public key to add to authorized keys
+- `--kamatera-extra-sshkey-file` / `KAMATERA_EXTRA_SSHKEY_FILE` - default: `` - path to SSH public key file to add to authorized keys
 
 see [Kamatera server options](https://console.kamatera.com/service/server) for the supported values (must be logged-in to Kamatera console)
